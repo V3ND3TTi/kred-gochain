@@ -4,61 +4,95 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 )
 
-// Wallet represents a simple address + balance container.
+// Wallet represents a basic address with a big integer balance
 type Wallet struct {
 	Address string
-	Balance uint64 // In Koins
+	Balance *big.Int
 }
 
-var wallets = make(map[string]*Wallet) // In-memory wallet storage
+var wallets = make(map[string]*Wallet)
+var activeNodes []*Wallet
+var rewardIndex int
 
-// CreateWallet generates a new wallet with a random address and optional starting balance.
-func CreateWallet(startingBalance uint64) *Wallet {
+// CreateWallet generates a new wallet with 0 Kred
+func CreateWallet() *Wallet {
 	address := generateAddress()
 	wallet := &Wallet{
 		Address: address,
-		Balance: startingBalance,
+		Balance: big.NewInt(0),
 	}
 
 	wallets[address] = wallet
 	return wallet
 }
 
-// GetWallet returns a wallet by address (if it exists).
+// GetWallet retrieves a wallet by address
 func GetWallet(address string) (*Wallet, bool) {
 	wallet, exists := wallets[address]
 	return wallet, exists
 }
 
-// AdjustBalance adds/subtracts balance from a wallet.
-func AdjustBalance(address string, amount int64) bool {
+// AdjustBalance adds a big.Int amount to the wallet balance
+func AdjustBalance(address string, amount *big.Int) bool {
 	wallet, exists := wallets[address]
 	if !exists {
 		return false
 	}
 
-	// Prevent negative balance
-	if amount < 0 && wallet.Balance < uint64(-amount) {
-		return false
+	// Prevent negative balance (only if subtracting)
+	if amount.Sign() < 0 {
+		newBal := new(big.Int).Add(wallet.Balance, amount)
+		if newBal.Sign() < 0 {
+			return false // insufficient funds
+		}
 	}
 
-	wallet.Balance = uint64(int64(wallet.Balance) + amount)
+	wallet.Balance.Add(wallet.Balance, amount)
 	return true
 }
 
-// ListWallets prints all wallets and their balances.
+// ListWallets prints all wallets and their balances
 func ListWallets() {
-	fmt.Println("📒 Wallets:")
+	fmt.Println("💵 Wallets:")
 	for _, w := range wallets {
-		fmt.Printf("  → %s: %d Koins (%.4f Kred)\n", w.Address, w.Balance, float64(w.Balance)/1e18)
+		kred := new(big.Float).Quo(new(big.Float).SetInt(w.Balance), big.NewFloat(1e18))
+		fmt.Printf("  → %s: %s Koins (%.4f Kred)\n", w.Address, w.Balance.String(), kred)
 	}
 }
 
-// generateAddress creates a pseudo-random 20-byte address (like Ethereum-style)
+// RegisterNode adds a wallet to the participation reward cycle
+func RegisterNode(wallet *Wallet) {
+	activeNodes = append(activeNodes, wallet)
+}
+
+// GetNextParticipant returns the next wallet in the reward cycle
+func GetNextParticipant() *Wallet {
+	if len(activeNodes) == 0 {
+		return nil
+	}
+	w := activeNodes[rewardIndex%len(activeNodes)]
+	rewardIndex++
+	return w
+}
+
+// GetAllWallets returns the full wallet map
+func GetAllWallets() map[string]*Wallet {
+	return wallets
+}
+
+// generateAddress creates a pseudo-random 20-byte hex address
 func generateAddress() string {
 	b := make([]byte, 20)
 	_, _ = rand.Read(b)
 	return "KRDx" + hex.EncodeToString(b)
+}
+
+// Kred returns a big.Int of amount * 1e18 (Koins)
+func Kred(amount int64) *big.Int {
+	base := big.NewInt(amount)
+	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
+	return new(big.Int).Mul(base, factor)
 }

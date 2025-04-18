@@ -1,52 +1,58 @@
 package blockchain
 
-// Blockchain represents the full Kred chain.
+import (
+	"math/big"
+	"time"
+)
+
+// Blockchain contains the slice of all validated blocks
 type Blockchain struct {
 	Blocks []*Block
 }
 
-// NewBlockchain initializes a new chain with the Genesis block.
+// NewBlockchain initializes the chain with the genesis block
 func NewBlockchain() *Blockchain {
-	genesis := GenesisBlock()
 	return &Blockchain{
-		Blocks: []*Block{genesis},
+		Blocks: []*Block{GenesisBlock()},
 	}
 }
 
-// AddBlock creates and appends a new block to the chain.
-func (bc *Blockchain) AddBlock(txs []Transaction, reward uint64) *Block {
-	lastBlock := bc.Blocks[len(bc.Blocks)-1]
-	newBlock := NewBlock(lastBlock.Index+1, txs, lastBlock.Hash, 0, reward)
-	bc.Blocks = append(bc.Blocks, newBlock)
-	return newBlock
-}
-
-// LatestBlock returns the most recent block in the chain.
+// LatestBlock returns the most recent block
 func (bc *Blockchain) LatestBlock() *Block {
 	return bc.Blocks[len(bc.Blocks)-1]
 }
 
-// IsValid checks the integrity of the blockchain.
+// AddBlock creates a new block and adds it to the chain
+func (bc *Blockchain) AddBlock(txs []Transaction, reward *big.Int) {
+	prevBlock := bc.LatestBlock()
+	newBlock := &Block{
+		Index:        prevBlock.Index + 1,
+		Timestamp:    time.Now(),
+		Transactions: txs,
+		PrevHash:     prevBlock.Hash,
+		Nonce:        0,
+		Reward:       new(big.Int).Set(reward),
+	}
+
+	newBlock.MerkleRoot = CalculateMerkleRoot(newBlock.Transactions)
+	newBlock.Hash = CalculateHash(*newBlock)
+
+	bc.Blocks = append(bc.Blocks, newBlock)
+}
+
+// IsValid checks the integrity of the entire blockchain
 func (bc *Blockchain) IsValid() bool {
 	for i := 1; i < len(bc.Blocks); i++ {
-		prev := bc.Blocks[i-1]
-		curr := bc.Blocks[i]
+		current := bc.Blocks[i]
+		previous := bc.Blocks[i-1]
 
-		// Validate hash chain
-		if curr.PrevHash != prev.Hash {
+		if current.Hash != CalculateHash(*current) {
 			return false
 		}
 
-		// Validate current block hash
-		if curr.Hash != CalculateHash(*curr) {
-			return false
-		}
-
-		// Validate Merkle root
-		if curr.MerkleRoot != CalculateMerkleRoot(curr.Transactions) {
+		if current.PrevHash != previous.Hash {
 			return false
 		}
 	}
-
 	return true
 }

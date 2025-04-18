@@ -3,61 +3,60 @@ package main
 import (
 	"fmt"
 	"github.com/V3ND3TTi/kred-gochain/blockchain"
+	"math/big"
 )
 
 func main() {
+	fmt.Println("🧱 Initializing node wallets...")
+
+	// Create wallets
+	w1 := blockchain.CreateWallet()
+	w2 := blockchain.CreateWallet()
+	w3 := blockchain.CreateWallet()
+
+	fmt.Printf("W1: %s\n", w1.Address)
+	fmt.Printf("W2: %s\n", w2.Address)
+	fmt.Printf("W3: %s\n", w3.Address)
+
+	// Register for participation
+	blockchain.RegisterNode(w1)
+	blockchain.RegisterNode(w2)
+	blockchain.RegisterNode(w3)
+
+	fmt.Println("\n✅ Participation nodes registered.")
+	blockchain.ListWallets()
+
+	// Initialize blockchain
 	chain := blockchain.NewBlockchain()
 
-	fmt.Println("🧱 Genesis Block:")
-	printBlock(chain.Blocks[0])
+	fmt.Println("\n⛏️  Simulating participation rewards...")
+	reward := blockchain.Kred(10) // 10 Kred
 
-	txs := []blockchain.Transaction{
-		{Sender: "KRDxAlice", Recipient: "KRDxBob", Amount: 1_000_000_000_000_000}, // 0.001 Kred
-		{Sender: "KRDxBob", Recipient: "KRDxCharlie", Amount: 500_000_000_000_000}, // 0.0005 Kred
+	for i := 1; i <= 5; i++ {
+		recipient := blockchain.GetNextParticipant()
+		if recipient == nil {
+			fmt.Println("❌ No active participant found.")
+			continue
+		}
+
+		// Credit reward to recipient
+		blockchain.AdjustBalance(recipient.Address, reward)
+
+		tx := blockchain.Transaction{
+			Sender:    "NETWORK",
+			Recipient: recipient.Address,
+			Amount:    new(big.Int).Set(reward),
+		}
+
+		chain.AddBlock([]blockchain.Transaction{tx}, reward)
+		fmt.Printf("🎉 Block #%d → %s rewarded 10 Kred\n", i, recipient.Address)
 	}
 
-	reward := uint64(10 * 1e18) // 10 Kred in Koins
-	chain.AddBlock(txs, reward)
+	fmt.Println("\n📒 Final Wallet Balances:")
+	blockchain.ListWallets()
 
 	fmt.Println("\n🧱 Latest Block:")
-	printBlock(chain.LatestBlock())
+	blockchain.PrintBlock(chain.LatestBlock())
 
-	fmt.Printf("\n✅ Chain Valid? %v\n", chain.IsValid())
-
-	fmt.Println("\n💳 Creating wallets...")
-
-	alice := blockchain.CreateWallet(5 * 1e18) // 5 Kred
-	bob := blockchain.CreateWallet(0)
-	// charlie := blockchain.CreateWallet(0)
-
-	fmt.Println("🎉 Wallets created:")
-	blockchain.ListWallets()
-
-	fmt.Printf("\n💸 Sending 1.5 Kred from %s to %s...\n", alice.Address, bob.Address)
-	success := blockchain.AdjustBalance(alice.Address, -int64(1_500_000_000_000_000_000)) && // -1.5 Kred
-		blockchain.AdjustBalance(bob.Address, 1_500_000_000_000_000_000) // +1.5 Kred
-
-	if success {
-		fmt.Println("✅ Transfer successful!")
-	} else {
-		fmt.Println("❌ Transfer failed!")
-	}
-
-	fmt.Println("\n📒 Updated Wallets:")
-	blockchain.ListWallets()
-}
-
-// Helper function to print block details nicely
-func printBlock(b *blockchain.Block) {
-	fmt.Printf("Block #: %d\n", b.Index)
-	fmt.Printf("Timestamp: %s\n", b.Timestamp.Format("2006-01-02 15:04:05"))
-	fmt.Printf("PrevHash: %s\n", b.PrevHash)
-	fmt.Printf("Hash: %s\n", b.Hash)
-	fmt.Printf("Merkle Root: %s\n", b.MerkleRoot)
-	fmt.Printf("Reward: %d Koins (%.4f Kred)\n", b.Reward, float64(b.Reward)/1e18)
-	fmt.Println("Transactions:")
-	for _, tx := range b.Transactions {
-		fmt.Printf("  → %s sent %d Koins (%.4f Kred) to %s\n",
-			tx.Sender, tx.Amount, float64(tx.Amount)/1e18, tx.Recipient)
-	}
+	fmt.Printf("\n🔎 Chain Valid? %v\n", chain.IsValid())
 }
