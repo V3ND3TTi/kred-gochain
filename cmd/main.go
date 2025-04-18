@@ -23,6 +23,28 @@ func main() {
 	printBlock(chain.LatestBlock())
 
 	fmt.Printf("\n✅ Chain Valid? %v\n", chain.IsValid())
+
+	fmt.Println("\n💳 Creating wallets...")
+
+	alice := blockchain.CreateWallet(5 * 1e18) // 5 Kred
+	bob := blockchain.CreateWallet(0)
+	// charlie := blockchain.CreateWallet(0)
+
+	fmt.Println("🎉 Wallets created:")
+	blockchain.ListWallets()
+
+	fmt.Printf("\n💸 Sending 1.5 Kred from %s to %s...\n", alice.Address, bob.Address)
+	success := blockchain.AdjustBalance(alice.Address, -int64(1_500_000_000_000_000_000)) && // -1.5 Kred
+		blockchain.AdjustBalance(bob.Address, 1_500_000_000_000_000_000) // +1.5 Kred
+
+	if success {
+		fmt.Println("✅ Transfer successful!")
+	} else {
+		fmt.Println("❌ Transfer failed!")
+	}
+
+	fmt.Println("\n📒 Updated Wallets:")
+	blockchain.ListWallets()
 }
 
 // Helper function to print block details nicely
