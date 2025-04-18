@@ -1,0 +1,34 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build cache & mod files
+/vendor/
+/bin/
+/dist/
+/build/
+
+# IDE / Editor Files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# JetBrains Remote Dev
+.cache/JetBrains/
+*.iml
+
+# GoLand logs & junk
+log/
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Optional: auto-commit backups
+auto-commit.log
