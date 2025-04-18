@@ -27,7 +27,7 @@ func main() {
 
 // Helper function to print block details nicely
 func printBlock(b *blockchain.Block) {
-	fmt.Printf("Index: %d\n", b.Index)
+	fmt.Printf("Block #: %d\n", b.Index)
 	fmt.Printf("Timestamp: %s\n", b.Timestamp.Format("2006-01-02 15:04:05"))
 	fmt.Printf("PrevHash: %s\n", b.PrevHash)
 	fmt.Printf("Hash: %s\n", b.Hash)
