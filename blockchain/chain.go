@@ -23,8 +23,10 @@ func (bc *Blockchain) LatestBlock() *Block {
 }
 
 // AddBlock creates a new block and adds it to the chain
-func (bc *Blockchain) AddBlock(txs []Transaction, reward *big.Int) {
+func (bc *Blockchain) AddBlock(txs []Transaction) {
 	prevBlock := bc.LatestBlock()
+	reward := CalculateReward(prevBlock.Index + 1)
+
 	newBlock := &Block{
 		Index:        prevBlock.Index + 1,
 		Timestamp:    time.Now(),

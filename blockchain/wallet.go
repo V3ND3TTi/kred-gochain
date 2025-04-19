@@ -96,3 +96,23 @@ func Kred(amount int64) *big.Int {
 	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
 	return new(big.Int).Mul(base, factor)
 }
+
+// Transfer handles a wallet-to-wallet transaction
+func Transfer(from, to string, amount *big.Int) bool {
+	fromWallet, existsFrom := wallets[from]
+	toWallet, existsTo := wallets[to]
+
+	if !existsFrom || !existsTo {
+		return false
+	}
+
+	// Ensure sender has enough balance
+	if fromWallet.Balance.Cmp(amount) < 0 {
+		return false
+	}
+
+	fromWallet.Balance.Sub(fromWallet.Balance, amount)
+	toWallet.Balance.Add(toWallet.Balance, amount)
+
+	return true
+}

@@ -52,6 +52,16 @@ func main() {
 		fmt.Printf("🎉 Block #%d → %s rewarded 10 Kred\n", i, recipient.Address)
 	}
 
+	fmt.Println("\n💸 Simulating wallet-to-wallet transfer:")
+	amount := blockchain.Kred(5) // 5 Kred
+
+	success := blockchain.Transfer(w1.Address, w2.Address, amount)
+	if success {
+		fmt.Printf("✅ Transferred 5 Kred from %s to %s\n", w1.Address, w2.Address)
+	} else {
+		fmt.Println("❌ Transfer failed.")
+	}
+
 	fmt.Println("\n📒 Final Wallet Balances:")
 	blockchain.ListWallets()
 
