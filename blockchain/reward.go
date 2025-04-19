@@ -54,3 +54,6 @@ func DistributeRewardEvenly(totalReward *big.Int, participatingNodes []*Node) ma
 
 	return rewards
 }
+
+// Note: During the testing phase, the CLI will simulate real blockchain interactions.
+// It is designed to evolve into a fully functioning API that powers the network and mobile app.

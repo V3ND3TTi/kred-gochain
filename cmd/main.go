@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/V3ND3TTi/kred-gochain/blockchain"
-	"math/big"
+	"time"
 )
 
 func main() {
@@ -29,27 +29,34 @@ func main() {
 	// Initialize blockchain
 	chain := blockchain.NewBlockchain()
 
-	fmt.Println("\n⛏️  Simulating participation rewards...")
-	reward := blockchain.Kred(10) // 10 Kred
+	// Simulate active participants
+	var activeNodes []*blockchain.Node
+	for addr := range blockchain.GetAllWallets() {
+		activeNodes = append(activeNodes, &blockchain.Node{
+			Address:       addr,
+			LastCheckIn:   time.Now(), // Pretend they just checked in
+			Participating: true,
+		})
+	}
 
+	// Simulate blocks with reward splits
+	fmt.Println("\n⛏️ Simulating reward distribution for 5 blocks...")
 	for i := 1; i <= 5; i++ {
-		recipient := blockchain.GetNextParticipant()
-		if recipient == nil {
-			fmt.Println("❌ No active participant found.")
-			continue
+		blockHeight := len(chain.Blocks)
+		reward := blockchain.CalculateReward(blockHeight)
+
+		rewards := blockchain.DistributeRewardEvenly(reward, activeNodes)
+
+		// Apply rewards
+		for addr, amount := range rewards {
+			blockchain.AdjustBalance(addr, amount)
 		}
 
-		// Credit reward to recipient
-		blockchain.AdjustBalance(recipient.Address, reward)
+		// Create a dummy tx for block (optional, or build from rewards)
+		txs := []blockchain.Transaction{}
+		chain.AddBlock(txs)
 
-		tx := blockchain.Transaction{
-			Sender:    "NETWORK",
-			Recipient: recipient.Address,
-			Amount:    new(big.Int).Set(reward),
-		}
-
-		chain.AddBlock([]blockchain.Transaction{tx}, reward)
-		fmt.Printf("🎉 Block #%d → %s rewarded 10 Kred\n", i, recipient.Address)
+		fmt.Printf("✅ Block #%d — Distributed %s Koins to %d nodes\n", blockHeight, reward.String(), len(activeNodes))
 	}
 
 	fmt.Println("\n💸 Simulating wallet-to-wallet transfer:")
