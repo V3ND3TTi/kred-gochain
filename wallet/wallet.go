@@ -1,4 +1,4 @@
-package blockchain
+package wallet
 
 import (
 	"crypto/rand"
@@ -115,4 +115,28 @@ func Transfer(from, to string, amount *big.Int) bool {
 	toWallet.Balance.Add(toWallet.Balance, amount)
 
 	return true
+}
+
+// GetBalance returns a wallet's balance or 0 if not found
+func GetBalance(address string) *big.Int {
+	wallet, exists := wallets[address]
+	if !exists {
+		return big.NewInt(0)
+	}
+	return wallet.Balance
+}
+
+// FormatToKred converts a *big.Int amount to a Kred string (with decimals)
+func FormatToKred(amount *big.Int) string {
+	kred := new(big.Float).Quo(new(big.Float).SetInt(amount), big.NewFloat(1e18))
+	return fmt.Sprintf("%.6f", kred)
+}
+
+// Send is a CLI-friendly wrapper for Transfer
+func Send(from, to string, amount int64) bool {
+	if amount <= 0 {
+		return false
+	}
+	amt := big.NewInt(amount)
+	return Transfer(from, to, amt)
 }

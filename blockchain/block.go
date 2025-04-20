@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/V3ND3TTi/kred-gochain/wallet"
 	"math/big"
 	"strings"
 	"time"
@@ -44,7 +45,7 @@ func CalculateHash(b Block) string {
 
 // GenesisBlock creates the first block in the chain
 func GenesisBlock() *Block {
-	reward := Kred(10) // 10 Kred = 1e18 * 10 Koins
+	reward := wallet.Kred(10) // 10 Kred = 1e18 * 10 Koins
 
 	genesisTx := Transaction{
 		Sender:    "NETWORK",

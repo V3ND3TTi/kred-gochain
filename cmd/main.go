@@ -2,78 +2,55 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/V3ND3TTi/kred-gochain/blockchain"
-	"time"
+	"github.com/V3ND3TTi/kred-gochain/wallet"
 )
 
 func main() {
-	fmt.Println("🧱 Initializing node wallets...")
-
-	// Create wallets
-	w1 := blockchain.CreateWallet()
-	w2 := blockchain.CreateWallet()
-	w3 := blockchain.CreateWallet()
-
-	fmt.Printf("W1: %s\n", w1.Address)
-	fmt.Printf("W2: %s\n", w2.Address)
-	fmt.Printf("W3: %s\n", w3.Address)
-
-	// Register for participation
-	blockchain.RegisterNode(w1)
-	blockchain.RegisterNode(w2)
-	blockchain.RegisterNode(w3)
-
-	fmt.Println("\n✅ Participation nodes registered.")
-	blockchain.ListWallets()
-
-	// Initialize blockchain
+	// 🔗 Create chain instance
 	chain := blockchain.NewBlockchain()
 
-	// Simulate active participants
-	var activeNodes []*blockchain.Node
-	for addr := range blockchain.GetAllWallets() {
-		activeNodes = append(activeNodes, &blockchain.Node{
-			Address:       addr,
-			LastCheckIn:   time.Now(), // Pretend they just checked in
-			Participating: true,
-		})
-	}
+	// 👤 Create wallets
+	alice := wallet.CreateWallet()
+	bob := wallet.CreateWallet()
+	charlie := wallet.CreateWallet()
 
-	// Simulate blocks with reward splits
-	fmt.Println("\n⛏️ Simulating reward distribution for 5 blocks...")
-	for i := 1; i <= 5; i++ {
-		blockHeight := len(chain.Blocks)
-		reward := blockchain.CalculateReward(blockHeight)
+	fmt.Println("🔐 Wallets:")
+	fmt.Println("  Alice:", alice.Address)
+	fmt.Println("  Bob:  ", bob.Address)
+	fmt.Println("  Charlie:", charlie.Address)
 
-		rewards := blockchain.DistributeRewardEvenly(reward, activeNodes)
+	// 🏆 Simulate participation rewards
+	fmt.Println("\n⛏️ Simulating 5 reward blocks...")
+	for i := 0; i < 5; i++ {
+		reward := blockchain.GetCurrentReward(len(chain.Blocks))
+		for _, addr := range []string{alice.Address, bob.Address, charlie.Address} {
+			wallet.AdjustBalance(addr, reward)
 
-		// Apply rewards
-		for addr, amount := range rewards {
-			blockchain.AdjustBalance(addr, amount)
+			// Add block per reward event
+			tx := blockchain.Transaction{
+				Sender:    "KRED_SYSTEM",
+				Recipient: addr,
+				Amount:    reward,
+			}
+			chain.AddBlock([]blockchain.Transaction{tx})
 		}
-
-		// Create a dummy tx for block (optional, or build from rewards)
-		txs := []blockchain.Transaction{}
-		chain.AddBlock(txs)
-
-		fmt.Printf("✅ Block #%d — Distributed %s Koins to %d nodes\n", blockHeight, reward.String(), len(activeNodes))
 	}
 
-	fmt.Println("\n💸 Simulating wallet-to-wallet transfer:")
-	amount := blockchain.Kred(5) // 5 Kred
+	// 💸 Simulate a transaction
+	fmt.Printf("\n📤 Alice sends 2 Kred to Bob\n")
+	amount := wallet.Kred(2)
+	wallet.Transfer(alice.Address, bob.Address, amount)
 
-	success := blockchain.Transfer(w1.Address, w2.Address, amount)
-	if success {
-		fmt.Printf("✅ Transferred 5 Kred from %s to %s\n", w1.Address, w2.Address)
-	} else {
-		fmt.Println("❌ Transfer failed.")
+	tx := blockchain.Transaction{
+		Sender:    alice.Address,
+		Recipient: bob.Address,
+		Amount:    amount,
 	}
+	chain.AddBlock([]blockchain.Transaction{tx})
 
-	fmt.Println("\n📒 Final Wallet Balances:")
-	blockchain.ListWallets()
-
-	fmt.Println("\n🧱 Latest Block:")
-	blockchain.PrintBlock(chain.LatestBlock())
-
-	fmt.Printf("\n🔎 Chain Valid? %v\n", chain.IsValid())
+	// 🧾 Final balances
+	fmt.Println("\n💵 Final Balances:")
+	wallet.ListWallets()
 }
